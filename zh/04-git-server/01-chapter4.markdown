@@ -513,29 +513,29 @@ Gitolite不仅能基于仓库设置权限，而且能使用仓库中的分支名
 
 ### 安装 ###
 
-安装Gitolite非常简单,你不需要为此阅读随之发布的大量文档。你需要一个Unix或类似服务器上的一个帐号。假定git、perl、以及一个openssh兼容的ssh服务器端已经安装，你都不需要root权限。在下面的例子中，我会在服务器‘gitserver’上使用帐号‘git’来工作。
+安装Gitolite非常简单,你不需要为此阅读随之发布的大量文档。你需要有一个Unix或类似服务器上的一个帐号。假定git、perl、以及一个openssh兼容的ssh服务器端已经安装，你都不需要root权限。在下面的例子中，我会在服务器‘gitserver’上使用帐号‘git’来工作。
 
-Gitolite is somewhat unusual as far as "server" software goes -- access is via ssh, and so every userid on the server is a potential "gitolite host".  We will describe the simplest install method in this article; for the other methods please see the documentation.
+Gitolite和通常的“服务器”端的程序有些不一样——通过ssh来接入，这样服务器上的任何一个帐号都可以用来做“gitolite主机”。我们在本文中会描述最简单的安装方法，其它的安装方法请参考随包发布的文档。
 
-To begin, create a user called `git` on your server and login to this user.  Copy your ssh pubkey (a file called `~/.ssh/id_rsa.pub` if you did a plain `ssh-keygen` with all the defaults) from your workstation, renaming it to `YourName.pub`.  Then run these commands:
+首先，在你的服务器上创建‘git’帐号，并用‘git’登录。然后，从你的工作主机拷贝你的ssh公钥（文件‘~/.ssh/id_rsa.pub’,如果你做简单的'ssh-keygen'操作，并使用的都是默认值）到服务器的$HOME目录，并重命名为‘你的名字.pub’。接着，在服务器上运行下述命令：
 
     git clone git://github.com/sitaramc/gitolite
     gitolite/install -ln
-        # assumes $HOME/bin exists and is in your $PATH
-    gitolite setup -pk $HOME/YourName.pub
-        # for example, I would run 'gitolite setup -pk $HOME/sitaram.pub'
+        # 假定$HOME/bin存在，并且在$PATH中
+    gitolite setup -pk $HOME/你的名字.pub
+        # 例如，我会运行'gitolite setup -pk $HOME/sitaram.pub'
 
-Finally, back on your workstation, run `git clone git@server:gitolite-admin`.
+最后，回到你的工作主机，运行`git clone git@server:gitolite-admin`。
 
-And you’re done!  Gitolite has now been installed on the server, and you now have a brand new repository called `gitolite-admin` in your workstation.  You administer your gitolite setup by making changes to this repository and pushing.
+成功！Gitolite就安装到你的服务器上了，同时你的工作主机上有了一个全新的‘gitolite-admin’仓库。你修改这个仓库的内容并push提交就能管理你安装的gitolite了。
 
-### Customising the Install ###
+### 个性化安装 ###
 
-While the default, quick, install works for most people, there are some ways to customise the install if you need to.  Some changes can be made simply by editing the rc file, but if that is not sufficient, there’s documentation on customising Gitolite.
+默认的快速安装能满足大部分人的需求，不过如果你需要的话，也可以通过一些方法来自定义你的安装。有一些调整可以简单的通过修改rc文件实现，如果这还不够，随Gitolite发布的文档中有详细的关于个性化安装的部分。
 
-### Config File and Access Control Rules ###
+### 配置文件和授权规则 ###
 
-Once the install is done, you switch to the `gitolite-admin` clone you just made on your workstation, and poke around to see what you got:
+安装完成后，你需要切到你主机上刚clone回来的‘gitolite-admin’，并到处看看，看里面有些什么：
 
 	$ cd ~/gitolite-admin/
 	$ ls
@@ -551,13 +551,13 @@ Once the install is done, you switch to the `gitolite-admin` clone you just made
 	repo testing
 	    RW+                 = @all
 
-Notice that "sitaram" (the name of the pubkey in the gl-setup command you used earlier) has read-write permissions on the `gitolite-admin` repository as well as a public key file of the same name.
+请注意这个"sitaram" （在之前gl-setup命令中你使用的公钥的名字）拥有‘gitolite-admin’仓库的读写权限，同时同名的公钥文件也在这个的仓库中。 
 
-Adding users is easy.  To add a user called "alice", obtain her public key, name it "alice.pub", and put it in the "keydir" directory of the clone of the gitolite-admin repo you just made on your workstation.  Add, commit, and push the change, and the user has been added.
+添加用户很简单。要添加一个“alice”，需要获取她的公钥，命名为“alice.pub”并存放到“keydir”目录，这个目录在你工作主机上刚clone回来的gitolite-admin仓库中。Add，commit，push这个变化，这个用户就添加成功了。
 
-The config file syntax for gitolite is well documented, so we’ll only mention some highlights here.
+gitolite配置文件的语法有很好的说明文档，所以我们这里只提一些关键点。
 
-You can group users or repos for convenience.  The group names are just like macros; when defining them, it doesn’t even matter whether they are projects or users; that distinction is only made when you *use* the "macro".
+你可以将用户或仓库分组。组名就像宏一样，在定义的时候，并不关心你定义的是项目仓库还是用户；区别仅仅在于你*用*这些“宏”的时候。
 
 	@oss_repos      = linux perl rakudo git gitolite
 	@secret_repos   = fenestra pear
@@ -567,7 +567,7 @@ You can group users or repos for convenience.  The group names are just like mac
 	@engineers      = sitaram dilbert wally alice
 	@staff          = @admins @engineers @interns
 
-You can control permissions at the "ref" level.  In the following example, interns can only push the "int" branch.  Engineers can push any branch whose name starts with "eng-", and tags that start with "rc" followed by a digit.  And the admins can do anything (including rewind) to any ref.
+你可以基于“ref”来控制权限。You can control permissions at the "ref" level.  In the following example, interns can only push the "int" branch.  Engineers can push any branch whose name starts with "eng-", and tags that start with "rc" followed by a digit.  And the admins can do anything (including rewind) to any ref.
 
 	repo @oss_repos
 	    RW  int$                = @interns
