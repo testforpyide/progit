@@ -1,4 +1,4 @@
-﻿# 服务器上的 Git #
+# 服务器上的 Git #
 
 到目前为止，你应该已经学会了使用 Git 来完成日常工作。然而，如果想与他人合作，还需要一个远程的 Git 仓库。尽管技术上可以从个人的仓库里推送和拉取修改内容，但我们不鼓励这样做，因为一不留心就很容易弄混其他人的进度。另外，你也一定希望合作者们即使在自己不开机的时候也能从仓库获取数据 — 拥有一个更稳定的公共仓库十分有用。因此，更好的合作方式是建立一个大家都可以访问的共享仓库，从那里推送和拉取数据。我们将把这个仓库称为 "Git 服务器"；代理一个 Git 仓库只需要花费很少的资源，几乎从不需要整个服务器来支持它的运行。
 
@@ -567,7 +567,7 @@ gitolite配置文件的语法有很好的说明文档，所以我们这里只提
 	@engineers      = sitaram dilbert wally alice
 	@staff          = @admins @engineers @interns
 
-你可以基于“ref”来控制权限。You can control permissions at the "ref" level.  In the following example, interns can only push the "int" branch.  Engineers can push any branch whose name starts with "eng-", and tags that start with "rc" followed by a digit.  And the admins can do anything (including rewind) to any ref.
+你可以基于“ref”来控制权限。在下面的这个例子中，interns（实习生）组只能用push提交到“int”分支。Engineers（工程师）组能push到命名以“eng-”开头的所有分支和格式为以“rc”开头加上数字的所有标签。而admins（管理员）组能对所有“ref”做任何操作。
 
 	repo @oss_repos
 	    RW  int$                = @interns
@@ -575,24 +575,24 @@ gitolite配置文件的语法有很好的说明文档，所以我们这里只提
 	    RW  refs/tags/rc[0-9]   = @engineers
 	    RW+                     = @admins
 
-The expression after the `RW` or `RW+` is a regular expression (regex) that the refname (ref) being pushed is matched against.  So we call it a "refex"!  Of course, a refex can be far more powerful than shown here, so don’t overdo it if you’re not comfortable with Perl regexes.
+`RW`和`RW+`后面是一个正则表达式，这个正则表达式用来匹配允许push操作的‘ref’的名称。因此我们把它叫做“refex”（可以理解为ref因子）！当然，refex远比这个例子所展示的要强大；但是如果你对Perl语法不是很在行的话，还是不要写太复杂的refex。
 
-Also, as you probably guessed, Gitolite prefixes `refs/heads/` as a syntactic convenience if the refex does not begin with `refs/`.
+而且，也许你已经猜到了，Gitolite在refex不以`refs/`打头的时候会自动添加`refs/heads`前缀来方便用户。
 
-An important feature of the config file’s syntax is that all the rules for a repository need not be in one place.  You can keep all the common stuff together, like the rules for all `oss_repos` shown above, then add specific rules for specific cases later on, like so:
+config（配置）文件语法的一个重要特性是：我们不需要把一个仓库相关的所有规则都写在一个地方。你可以把所有通常的规则放一块——类似上例所示的`oss_repos`的那些规则——然后添加一些特定情况下的特殊规则，例如：
 
 	repo gitolite
 	    RW+                     = sitaram
 
-That rule will just get added to the ruleset for the `gitolite` repository.
+这个规则仅仅会在`gitolite`仓库的规则集和中再添加这一条。
 
-At this point you might be wondering how the access control rules are actually applied, so let’s go over that briefly.
+现在你也许希望了解这些访问控制规则实际上是如何来应用的，好吧，让我们来简单的介绍下。
 
-There are two levels of access control in Gitolite.  The first is at the repository level; if you have read (or write) access to *any* ref in the repository, then you have read (or write) access to the repository.  This is the only access control that Gitosis had.
+在Gitolite中有两级访问权限控制。第一级是基于仓库级别的；如果你拥有了某个仓库*任何*ref的读（或写）权限，你就拥有了这个仓库的读（或写）权限。这是Gitosis拥有的唯一的访问权限控制功能。
 
-The second level, applicable only to "write" access, is by branch or tag within a repository.  The username, the access being attempted (`W` or `+`), and the refname being updated are known.  The access rules are checked in order of appearance in the config file, looking for a match for this combination (but remember that the refname is regex-matched, not merely string-matched).  If a match is found, the push succeeds.  A fallthrough results in access being denied.
+第二个级别，仅针对“写”权限，是基于仓库下面的分支或标签来控制的。用户名，当前操作的访问权限级别（`W`或`+`），以及将被更新的ref名称都是知道的。访问控制规则会根据在config（配置）文件中出现的顺序来逐条进行匹配，直到找到符合所有上述三项内容的规则（但是记住ref名称是语法匹配，而不是简单的字符串匹配）。如果匹配项找到了，push操作会被允许。所有的规则匹配完都不成功意味着操作将被拒绝。
 
-### Advanced Access Control with "deny" rules ###
+### 高级访问权限控制之“deny”（拒绝）规则 ###
 
 So far, we’ve only seen permissions to be one of `R`, `RW`, or `RW+`.  However, Gitolite allows another permission: `-`, standing for "deny".  This gives you a lot more power, at the expense of some complexity, because now fallthrough is not the *only* way for access to be denied, so the *order of the rules now matters*!
 
@@ -615,7 +615,7 @@ In addition to restricting what branches a user can push changes to, you can als
 
 User who are migrating from the older gitolite should note that there is a significant change in behaviour with regard to this feature; please see the migration guide for details.
 
-### Personal Branches ###
+### 个人分支Personal Branches ###
 
 Gitolite also has a feature called "personal branches" (or rather, "personal branch namespace") that can be very useful in a corporate environment.
 
