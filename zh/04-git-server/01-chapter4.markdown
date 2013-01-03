@@ -594,48 +594,48 @@ config（配置）文件语法的一个重要特性是：我们不需要把一�
 
 ### 高级访问权限控制之“deny”（拒绝）规则 ###
 
-So far, we’ve only seen permissions to be one of `R`, `RW`, or `RW+`.  However, Gitolite allows another permission: `-`, standing for "deny".  This gives you a lot more power, at the expense of some complexity, because now fallthrough is not the *only* way for access to be denied, so the *order of the rules now matters*!
+目前，我们只见到了`R`，`RW`, 或`RW+`的权限。但是，Gitolite还有另外一个权限：`-`，表示“拒绝”。这个功能非常强大，虽然以提高一些复杂性作为代价，也使得*访问控制规则的顺序真正重要了*！
 
-Let us say, in the situation above, we want engineers to be able to rewind any branch *except* master and integ.  Here’s how to do that:
+例如，在上面的例子中，我们希望工程师可以回滚*除*master和integ以外的所有分支。下面展示了如何来实现：
 
 	    RW  master integ    = @engineers
 	    -   master integ    = @engineers
 	    RW+                 = @engineers
 
-Again, you simply follow the rules top down until you hit a match for your access mode, or a deny.  Non-rewind push to master or integ is allowed by the first rule.  A rewind push to those refs does not match the first rule, drops down to the second, and is therefore denied.  Any push (rewind or non-rewind) to refs other than master or integ won’t match the first two rules anyway, and the third rule allows it.
+然后，我们从上往下开始匹配规则直到找到期望的允许或拒绝访问的规则。第一条规则没有对master或integ的回滚权限授权。对这两个ref的回滚push操作不会和第一条规则匹配，看第二条，至此会被拒绝。对master和integ之外所有ref的push操作（不论回滚与否）都不会匹配第一和第二条规则，而第三条规则会允许这个操作。
 
-### Restricting pushes by files changed ###
+### 基于被改变的文件来限制push操作 ###
 
-In addition to restricting what branches a user can push changes to, you can also restrict what files they are allowed to touch.  For example, perhaps the Makefile (or some other program) is really not supposed to be changed by just anyone, because a lot of things depend on it or would break if the changes are not done *just right*.  You can tell gitolite:
-
+除了限制一个用户可以push操作的分支，你还可以限制他们能够改变的文件。例如，可能Makefile（或其它程序）文件是不允许被所有用户修改的，因为有太多的事情依赖它，或者说修改得不是*正好正确*的话会造成崩溃。你可以告诉gitolite：
     repo foo
         RW                      =   @junior_devs @senior_devs
 
         -   VREF/NAME/Makefile  =   @junior_devs
+（这个例子里规则的顺序可能写颠倒了，译者注）
 
-User who are migrating from the older gitolite should note that there is a significant change in behaviour with regard to this feature; please see the migration guide for details.
+从旧版的gitolite迁移过来的用户需要特别注意这个功能带来的变化；请参考详细的迁移说明文档来进一步了解。
 
-### 个人分支Personal Branches ###
+### 个人分支 ###
 
-Gitolite also has a feature called "personal branches" (or rather, "personal branch namespace") that can be very useful in a corporate environment.
+Gitolite还有一个功能叫“个人分支”（或者称，“个人分支命名空间”），这个功能在协作环境下非常有用。
 
-A lot of code exchange in the git world happens by "please pull" requests.  In a corporate environment, however, unauthenticated access is a no-no, and a developer workstation cannot do authentication, so you have to push to the central server and ask someone to pull from there.
+在git的世界里大量的代码交流是通过“请求拉取”的请求机制完成的。在一个协作环境下，通常，未授权的操作会被拒绝，而开发人员的工作电脑是不能做授权的，因而你只能通过push操作把代码推送到一个中心服务器再要其他人去那里通过pull拉取。
 
-This would normally cause the same branch name clutter as in a centralised VCS, plus setting up permissions for this becomes a chore for the admin.
+这在一个中央控制的VCS中通常会产生分支重名而造成混乱，而管理员要对这些分支设置相应的权限更是痛苦。
 
-Gitolite lets you define a "personal" or "scratch" namespace prefix for each developer (for example, `refs/personal/<devname>/*`); please see the documentation for details.
+Gitolite允许你为每个开发人员定义一个“个人的”或者说“草稿的”命名空间前缀（例如，`/refs/personal/<devname>/*`）；请参阅相关文档做深入了解。
 
 ### "Wildcard" repositories ###
 
-Gitolite allows you to specify repositories with wildcards (actually perl regexes), like, for example `assignments/s[0-9][0-9]/a[0-9][0-9]`, to pick a random example.  It also allows you to assign a new permission mode ("C") which enables users to create repositories based on such wild cards, automatically assigns ownership to the specific user who created it, allows him/her to hand out R and RW permissions to other users to collaborate, etc.  Again, please see the documentation for details.
+Gitolite允许你用通配符来指定仓库（实际是perl的正则表达式），类似，例如用`assignments/s[0-9][0-9]/a[0-9][0-9]`，来挑选一个随机的例子。它还允许你分配一个新的权限类别（“C”）来授权允许用户按通配符的规则创建仓库，同时自动把这个新仓库的所有者权限授予创建它的用户。这样，该用户可以自行分配R和RW权限给其他同事以便于协作，以及进行其他相关的处理。还有，请参阅相关文档做深入了解。
 
 ### 其它功能 ###
 
-We’ll round off this discussion with a sampling of other features, all of which, and many more, are described in great detail in the documentation.
+让我们用一些示例功能来结束本节的内容，所有这些功能，当然还有很多其它功能，都有非常详细的功能描述文档。
 
-**日志**: Gitolite logs all successful accesses.  If you were somewhat relaxed about giving people rewind permissions (`RW+`) and some kid blew away "master", the log file is a life saver, in terms of easily and quickly finding the SHA that got hosed.
+**日志**: Gitolite会在日志中记录所有成功的访问操作。如果你相对比较随意的给用户分配回滚权限（`RW+`）而某个新手不小心弄丢了“master”分支，日志文件就是你最后的救命稻草，我们可以根据日志来方便快捷的找到丢失的SHA。 
 
-**权限报告**: Another convenient feature is what happens when you try and just ssh to the server.  Gitolite shows you what repos you have access to, and what that access may be.  Here’s an example:
+**权限报告**: 另一个方便的功能是当你尝试ssh登陆到服务器上时就会显示的。Gitolite会为你显示你有权访问的仓库，以及你拥有的具体的访问权限。下面是一个例子：
 
         hello sitaram, this is git@git running gitolite3 v3.01-18-g9609868 on git 1.7.4.4
 
